@@ -36,7 +36,7 @@ void setup()
   RFM95_TX_init();
 }
 
-int16_t packetnum = 0; // packet counter, we increment per xmission
+int16_t packetnum = 0; // packet counter
 
 void loop()
 {
