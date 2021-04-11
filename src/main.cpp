@@ -48,25 +48,25 @@ void loop()
   Serial.println(radiopacket);
   radiopacket[31] = 0;
 
-  Serial.println("Sending...");
+  //Serial.println("Sending...");
   delay(10);
   rf95.send((uint8_t *)radiopacket, 20);
 
-  Serial.println("Waiting for packet to complete...");
+  //Serial.println("Waiting for packet to complete...");
   delay(10);
   rf95.waitPacketSent();
   uint8_t buf[RH_RF95_MAX_MESSAGE_LEN];
   uint8_t len = sizeof(buf);
 
-  Serial.println("Waiting for reply...");
+  Serial.println("Message sent, waiting for reply...");
   delay(10);
   if (rf95.waitAvailableTimeout(1000))
   {
     if (rf95.recv(buf, &len))
     {
-      Serial.print("Got reply: ");
-      Serial.println((char *)buf);
-      Serial.print("RSSI: ");
+      Serial.print(">> Got reply: ");
+      Serial.print((char *)buf);
+      Serial.print("  RSSI: ");
       Serial.println(rf95.lastRssi(), DEC);
     }
     else
@@ -78,6 +78,10 @@ void loop()
   {
     Serial.println("No reply from receiver");
   }
+  yield();
+  delay(1000);
+  yield();
+  delay(1000);
   yield();
   delay(1000);
   yield();
