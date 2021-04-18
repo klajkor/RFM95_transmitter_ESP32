@@ -28,6 +28,12 @@
 #include <SSD1306Ascii.h>
 #include <SSD1306AsciiWire.h>
 //#include <Adafruit_SSD1306.h>
+#include "DHT.h"
+
+#define DHTPIN 27     // Digital pin connected to the DHT sensor
+#define DHTTYPE DHT22   // DHT 22  (AM2302), AM2321
+
+DHT dht(DHTPIN, DHTTYPE);
 
 #define OLED_I2C_ADDR 0x3C /* OLED module I2C address */
 #define OLED_SDA_GPIO 21
@@ -47,26 +53,39 @@ RH_RF95 rf95(RFM95_CS, RFM95_INT);
 void GPIO_init(void);
 void RFM95_TX_init(void);
 void Ssd1306_Oled_Init(void);
+void readTemperatureHumidity(void);
+
+//DHT22 measured values
+float sensorTemperature = 0.0;
+float sensorHumidity = 0.0;
+char TemperatureString[] = "999.9";
+char HumidityString[] = "999";
+
+int16_t packetnum = 0; // packet counter
+int16_t Last_RSSI = 0;
 
 void setup()
 {
   Serial.begin(115200);
   GPIO_init();
+  dht.begin();
   Ssd1306_Oled_Init();
   RFM95_TX_init();
 }
-
-int16_t packetnum = 0; // packet counter
-int16_t Last_RSSI = 0;
 
 void loop()
 {
   oled_ssd1306_display.clear();
   oled_ssd1306_display.setRow(0);
   oled_ssd1306_display.setCol(0);
+  readTemperatureHumidity();
   Serial.println("Sending to RF95_server");
-  char radiopacket[32] = "RFM95 test # N      ";
-  itoa(packetnum++, radiopacket + 13, 10);
+  char radiopacket[32] = "000.0°C 000% # N      ";
+  memcpy(radiopacket,TemperatureString,5);
+  memcpy(radiopacket + 9,HumidityString,3);
+  packetnum++;
+  packetnum=packetnum % 1000;
+  itoa(packetnum, radiopacket + 15, 10);
   Serial.print("Sending ");
   Serial.println(radiopacket);
   radiopacket[31] = 0;
@@ -181,4 +200,18 @@ void Ssd1306_Oled_Init(void) {
   delay(500);
   yield();
   delay(500);
+}
+
+void readTemperatureHumidity(void)
+{ 
+  sensorTemperature = dht.readTemperature();
+  sensorHumidity = dht.readHumidity();
+  dtostrf((sensorTemperature), 5, 1, TemperatureString);
+  dtostrf(sensorHumidity, 3, 0, HumidityString);
+  Serial.print(F(":: Temperature: "));
+  Serial.print(TemperatureString);
+  Serial.print(F("°C "));
+  Serial.print(F("Humidity: "));
+  Serial.print(HumidityString);
+  Serial.println(F("%"));  
 }
